@@ -1,10 +1,10 @@
 //! an embedded database using the sled framework
-
+//!
+use borsh::BorshSerialize;
 pub mod config;
 pub mod types;
 use anyhow::{anyhow, Result};
 use config::DbOpts;
-use serde::Serialize;
 use sled::{IVec, Tree};
 use std::sync::Arc;
 
@@ -106,11 +106,11 @@ impl DbTree {
     }
     pub fn insert<T>(&self, value: &T) -> Result<Option<sled::IVec>>
     where
-        T: Serialize + DbKey,
+        T: BorshSerialize + DbKey,
     {
         Ok(self.tree.insert(
             value.key()?,
-            match serde_json::to_vec(value) {
+            match borsh::to_vec(value) {
                 Ok(data) => data,
                 Err(err) => return Err(anyhow!("failed to insert entry {:#?}", err)),
             },
@@ -130,11 +130,11 @@ impl DbBatch {
     }
     pub fn insert<T>(&mut self, value: &T) -> Result<()>
     where
-        T: Serialize + DbKey,
+        T: BorshSerialize + DbKey,
     {
         self.batch.insert(
             value.key()?,
-            match serde_json::to_vec(value) {
+            match borsh::to_vec(value) {
                 Ok(data) => data,
                 Err(err) => return Err(anyhow!("failed to insert entry into batch {:#?}", err)),
             },
@@ -159,11 +159,11 @@ impl DbBatch {
 #[cfg(test)]
 mod test {
     use super::*;
+    use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
     use config::DbOpts;
-    use serde::Deserialize;
     use std::fs::remove_dir_all;
 
-    #[derive(Serialize, Deserialize)]
+    #[derive(BorshSerialize, BorshDeserialize, BorshSchema)]
     pub struct TestData {
         pub key: String,
         pub foo: String,
@@ -222,8 +222,20 @@ mod test {
         let query = || {
             let foobar_values = db.list_values(DbTrees::Custom("foobar")).unwrap();
             assert_eq!(foobar_values.len(), 2);
+            let test_data_one: TestData =
+                borsh::de::BorshDeserialize::try_from_slice(&foobar_values[0].1).unwrap();
+            assert_eq!(test_data_one.key, "key1".to_string());
+            assert_eq!(test_data_one.foo, "foo1".to_string());
+            let test_data_two: TestData =
+                borsh::de::BorshDeserialize::try_from_slice(&foobar_values[1].1).unwrap();
+            assert_eq!(test_data_two.key, "key2".to_string());
+            assert_eq!(test_data_two.foo, "foo2".to_string());
             let foobarbaz_values = db.list_values(DbTrees::Custom("foobarbaz")).unwrap();
             assert_eq!(foobarbaz_values.len(), 1);
+            let test_data_three: TestData =
+                borsh::de::BorshDeserialize::try_from_slice(&foobarbaz_values[0].1).unwrap();
+            assert_eq!(test_data_three.key, "key3".to_string());
+            assert_eq!(test_data_three.foo, "foo3".to_string());
         };
         insert();
         query();
