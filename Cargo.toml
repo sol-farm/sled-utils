@@ -1,6 +1,6 @@
 [package]
 name = "tulip-sled-util"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 authors = ["Tulip Protocol"]
 description = "wrapper for working with sled in a more structured manner"

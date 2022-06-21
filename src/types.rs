@@ -1,3 +1,6 @@
+/// the default tree identifier
+pub const DEFAULT_TREE_ID: &str = "__sled__default";
+
 pub trait DbKey {
     /// returns the key of value being inserted into the db
     fn key(&self) -> anyhow::Result<Vec<u8>>;
@@ -7,6 +10,7 @@ pub trait DbKey {
 #[derive(Debug, Clone, Copy)]
 pub enum DbTrees<'a> {
     Custom(&'a str),
+    Default,
 }
 
 impl<'a> ToString for DbTrees<'a> {
@@ -19,6 +23,7 @@ impl<'a> DbTrees<'a> {
     pub fn str(&self) -> &str {
         match self {
             DbTrees::Custom(tree_key) => tree_key,
+            DbTrees::Default => DEFAULT_TREE_ID,
         }
     }
 }

@@ -79,6 +79,37 @@ impl Database {
                 }
             });
     }
+    pub fn get<K: AsRef<[u8]>>(&self, key: K) -> sled::Result<Option<sled::IVec>> {
+        self.db.get(key)
+    }
+    pub fn deserialize<K: AsRef<[u8]>, T>(&self, key: K) -> Result<T>
+    where
+        T: BorshDeserialize,
+    {
+        let value = self.get(key)?;
+        if let Some(value) = value {
+            Ok(borsh::de::BorshDeserialize::try_from_slice(&value)?)
+        } else {
+            Err(anyhow!("value for key is None"))
+        }
+    }
+    pub fn apply_batch(&self, batch: &mut DbBatch) -> sled::Result<()> {
+        self.db.apply_batch(batch.take_inner())
+    }
+    /// inserts a value into the default tree
+    pub fn insert<T>(&mut self, value: &T) -> Result<()>
+    where
+        T: BorshSerialize + DbKey,
+    {
+        self.db.insert(
+            value.key()?,
+            match borsh::to_vec(value) {
+                Ok(data) => data,
+                Err(err) => return Err(anyhow!("failed to insert entry into batch {:#?}", err)),
+            },
+        )?;
+        Ok(())
+    }
 }
 
 impl DbTree {
@@ -229,6 +260,15 @@ mod test {
                 tree.apply_batch(&mut db_batch).unwrap();
                 assert_eq!(tree.len(), 1);
             }
+            db_batch
+                .insert(&TestData {
+                    key: "key4".to_string(),
+                    foo: "foo4".to_string(),
+                })
+                .unwrap();
+            {
+                db.apply_batch(&mut db_batch).unwrap();
+            }
         };
         let query = || {
             let foobar_values = db.list_values(DbTrees::Custom("foobar")).unwrap();
@@ -256,6 +296,8 @@ mod test {
                 .unwrap();
             assert_eq!(test_data_three.key, "key3".to_string());
             assert_eq!(test_data_three.foo, "foo3".to_string());
+            let default_tree_values = db.list_values(DbTrees::Default).unwrap();
+            assert_eq!(default_tree_values.len(), 1);
         };
         insert();
         query();
