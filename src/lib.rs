@@ -127,7 +127,7 @@ impl DbTree {
         if let Some(value) = value {
             Ok(borsh::de::BorshDeserialize::try_from_slice(&value)?)
         } else {
-            return Err(anyhow!("value for key is None"));
+            Err(anyhow!("value for key is None"))
         }
     }
 }
