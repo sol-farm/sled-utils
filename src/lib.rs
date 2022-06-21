@@ -1,6 +1,6 @@
 //! an embedded database using the sled framework
 //!
-use borsh::BorshSerialize;
+use borsh::{BorshDeserialize, BorshSerialize};
 pub mod config;
 pub mod types;
 use anyhow::{anyhow, Result};
@@ -119,6 +119,17 @@ impl DbTree {
     pub fn get<K: AsRef<[u8]>>(&self, key: K) -> sled::Result<Option<sled::IVec>> {
         self.tree.get(key)
     }
+    pub fn deserialize<K: AsRef<[u8]>, T>(&self, key: K) -> Result<T>
+    where
+        T: BorshDeserialize,
+    {
+        let value = self.get(key)?;
+        if let Some(value) = value {
+            Ok(borsh::de::BorshDeserialize::try_from_slice(&value)?)
+        } else {
+            return Err(anyhow!("value for key is None"));
+        }
+    }
 }
 
 impl DbBatch {
@@ -222,18 +233,27 @@ mod test {
         let query = || {
             let foobar_values = db.list_values(DbTrees::Custom("foobar")).unwrap();
             assert_eq!(foobar_values.len(), 2);
-            let test_data_one: TestData =
-                borsh::de::BorshDeserialize::try_from_slice(&foobar_values[0].1).unwrap();
+            let test_data_one: TestData = db
+                .open_tree(DbTrees::Custom("foobar"))
+                .unwrap()
+                .deserialize(foobar_values[0].0.clone())
+                .unwrap();
             assert_eq!(test_data_one.key, "key1".to_string());
             assert_eq!(test_data_one.foo, "foo1".to_string());
-            let test_data_two: TestData =
-                borsh::de::BorshDeserialize::try_from_slice(&foobar_values[1].1).unwrap();
+            let test_data_two: TestData = db
+                .open_tree(DbTrees::Custom("foobar"))
+                .unwrap()
+                .deserialize(foobar_values[1].0.clone())
+                .unwrap();
             assert_eq!(test_data_two.key, "key2".to_string());
             assert_eq!(test_data_two.foo, "foo2".to_string());
             let foobarbaz_values = db.list_values(DbTrees::Custom("foobarbaz")).unwrap();
             assert_eq!(foobarbaz_values.len(), 1);
-            let test_data_three: TestData =
-                borsh::de::BorshDeserialize::try_from_slice(&foobarbaz_values[0].1).unwrap();
+            let test_data_three: TestData = db
+                .open_tree(DbTrees::Custom("foobarbaz"))
+                .unwrap()
+                .deserialize(foobarbaz_values[0].0.clone())
+                .unwrap();
             assert_eq!(test_data_three.key, "key3".to_string());
             assert_eq!(test_data_three.foo, "foo3".to_string());
         };
