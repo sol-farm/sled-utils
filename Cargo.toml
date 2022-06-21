@@ -6,7 +6,7 @@ authors = ["Tulip Protocol"]
 description = "wrapper for working with sled in a more structured manner"
 keywords = ["sled", "structured"]
 license = "MIT/Apache-2.0"
-readme = "../README.md"
+readme = "./README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
