@@ -1,6 +1,6 @@
 pub trait DbKey {
     /// returns the key of value being inserted into the db
-    fn key(&self) -> anyhow::Result<&[u8]>;
+    fn key(&self) -> anyhow::Result<Vec<u8>>;
 }
 
 /// various trees and their keys for use with sled

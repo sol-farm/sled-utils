@@ -181,8 +181,8 @@ mod test {
     }
 
     impl DbKey for TestData {
-        fn key(&self) -> anyhow::Result<&[u8]> {
-            Ok(self.key.as_bytes())
+        fn key(&self) -> anyhow::Result<Vec<u8>> {
+            Ok(self.key.as_bytes().to_vec())
         }
     }
 
