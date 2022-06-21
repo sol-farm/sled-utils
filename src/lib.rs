@@ -89,6 +89,9 @@ impl DbTree {
     pub fn len(&self) -> usize {
         self.tree.len()
     }
+    pub fn is_empty(&self) -> bool {
+        self.tree.is_empty()
+    }
     pub fn iter(&self) -> sled::Iter {
         self.tree.iter()
     }
@@ -145,7 +148,7 @@ impl DbBatch {
     pub fn take_inner(&mut self) -> sled::Batch {
         std::mem::take(&mut self.batch)
     }
-    pub fn inner<'a>(&'a self) -> &'a sled::Batch {
+    pub fn inner(&self) -> &sled::Batch {
         &self.batch
     }
     pub fn count(&self) -> u64 {

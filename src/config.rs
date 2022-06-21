@@ -24,30 +24,30 @@ impl Default for DbMode {
     }
 }
 
-impl Into<sled::Mode> for DbMode {
-    fn into(self) -> sled::Mode {
-        match self {
+impl From<DbMode> for sled::Mode {
+    fn from(conf: DbMode) -> Self {
+        match conf {
             DbMode::LowSpace => sled::Mode::LowSpace,
             DbMode::Fast => sled::Mode::HighThroughput,
         }
     }
 }
 
-impl Into<sled::Config> for &DbOpts {
-    fn into(self) -> sled::Config {
+impl From<&DbOpts> for sled::Config {
+    fn from(opts: &DbOpts) -> Self {
         let mut sled_config = sled::Config::new();
-        sled_config = sled_config.path(self.path.clone());
-        if let Some(cache) = self.system_page_cache.as_ref() {
+        sled_config = sled_config.path(opts.path.clone());
+        if let Some(cache) = opts.system_page_cache.as_ref() {
             sled_config = sled_config.cache_capacity(*cache);
         }
-        if let Some(compression) = self.compression_factor.as_ref() {
+        if let Some(compression) = opts.compression_factor.as_ref() {
             sled_config = sled_config.use_compression(true);
             sled_config = sled_config.compression_factor(*compression);
         }
-        if let Some(mode) = self.mode {
+        if let Some(mode) = opts.mode {
             sled_config = sled_config.mode(mode.into());
         }
-        if self.debug {
+        if opts.debug {
             sled_config = sled_config.print_profile_on_drop(true);
         }
         sled_config
