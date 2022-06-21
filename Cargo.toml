@@ -1,0 +1,18 @@
+[package]
+name = "tulip-sled-util"
+version = "0.1.0"
+edition = "2021"
+authors = ["Tulip Protocol"]
+description = "wrapper for working with sled in a more structured manner"
+keywords = ["sled", "structured"]
+license = "MIT/Apache-2.0"
+readme = "../README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4.14"
+anyhow = "1.0.42"
+sled = "0.34.7"
+serde_json = "1.0.64"
+serde = { version = "1.0", features = ["derive"] }
